@@ -281,10 +281,16 @@ crl-verify crl.pem
 tls-auth ta.key 0
 
 
+#client-to-client
 topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt" > /etc/openvpn/server.conf
-echo 'push "redirect-gateway def1 bypass-dhcp"' >> /etc/openvpn/server.conf
+echo '
+route add -net 10.0.1.0 netmask 255.255.255.0 gw 10.4.0.2
+route 10.8.0.0 10.134.1.110
+push "redirect-gateway def1 autolocal"
+push "route 10.134.1.0 255.255.255.0"
+' >> /etc/openvpn/server.conf
     
     # DNS
     case $DNS in
@@ -326,18 +332,15 @@ group $GROUPNAME
 
 
 status openvpn-status.log
-#status openvpn-status.log 300
-status-version 2
 log /var/log/openvpn.log
 verb 3 
 mute 20
 
 comp-lzo
 
-# Pakcketsize
-#tun-mtu 1500
-mssfix 1400
-#fragment 1300
+tun-mtu 1500
+#fragment 1400
+mssfix 1450
 
     " >> /etc/openvpn/server.conf
 
@@ -451,21 +454,19 @@ rcvbuf 393216
 # 2016-08-24 16:24:05 NOTE: This connection is unable to accomodate a UDP packet size of 1557. Consider using 
 # --fragment or --mssfix options as a workaround.
 #
-# Pakcketsize
-#tun-mtu 1500
-mssfix 1400
-#fragment 1300
+
+tun-mtu 1500
+#fragment 1400
+mssfix 1450
 
 remote $IP $PORT
 resolv-retry infinite
-#auth-retry nointeract
 nobind
 persist-key
 persist-tun
 remote-cert-tls server
 cipher AES-128-CBC
 comp-lzo
-setenv opt block-outside-dns
 key-direction 1
 verb 3" > /etc/openvpn/client-common.txt
 
@@ -477,4 +478,3 @@ verb 3" > /etc/openvpn/client-common.txt
     echo "Your client config is available at ~/$CLIENT.ovpn"
     echo "If you want to add more clients, you simply need to run this script another time!"
 fi
-
