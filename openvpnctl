@@ -286,13 +286,24 @@ topology subnet
 server 10.8.0.0 255.255.255.0
 ifconfig-pool-persist ipp.txt" > /etc/openvpn/server.conf
 echo '
-route add -net 10.0.1.0 netmask 255.255.255.0 gw 10.4.0.2
-route 10.8.0.0 10.134.1.110
+
+# Tell clients to send all their traffic through the VPN
 push "redirect-gateway def1 autolocal"
+
+# Give the server a route to the subnet at 947 Diamond St
+route 172.16.7.0 255.255.255.0
+
+# Give clients a route to the VPN server
 push "route 10.134.1.0 255.255.255.0"
+
+# Give all connected VPN clients access to the subnet at 947 Diamond St
+client-to-client
+push "route 172.16.7.0 255.255.255.0"
+
 ' >> /etc/openvpn/server.conf
     
     # DNS
+    # Send out some DNS servers
     case $DNS in
         1) 
         # Obtain the resolvers from resolv.conf and use them for OpenVPN
@@ -318,7 +329,6 @@ push "route 10.134.1.0 255.255.255.0"
         6) 
         echo 'push "dhcp-option DNS 129.250.35.250"' >> /etc/openvpn/server.conf
         echo 'push "dhcp-option DNS 216.52.254.33"' >> /etc/openvpn/server.conf
-        echo 'push "dhcp-option DNS 141.1.27.249"' >> /etc/openvpn/server.conf
         ;;
     esac
     echo "
@@ -447,8 +457,6 @@ rcvbuf 393216
 #
 # Ran mtu-test and got:
 #
-# 2016-08-24 16:21:15 *Tunnelblick: This computer's apparent public IP address changed from 76.167.118.58 before 
-# connection to 198.199.103.178 after connection
 # 2016-08-24 16:24:05 NOTE: Empirical MTU test completed [Tried,Actual] local->remote=[1557,1557]
 # remote->local=[1557,1445]
 # 2016-08-24 16:24:05 NOTE: This connection is unable to accomodate a UDP packet size of 1557. Consider using 
@@ -459,7 +467,9 @@ tun-mtu 1500
 #fragment 1400
 mssfix 1450
 
-remote $IP $PORT
+#remote $IP $PORT
+remote vpn.mac.smj10j.net $PORT
+
 resolv-retry infinite
 nobind
 persist-key
