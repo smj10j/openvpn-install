@@ -286,8 +286,7 @@ tls-auth ta.key 0
 #client-to-client
 topology subnet
 server 10.8.0.0 255.255.255.0
-ifconfig-pool-persist ipp.txt" > /etc/openvpn/server.conf
-echo '
+ifconfig-pool-persist ipp.txt
 
 # Tell clients to send all their traffic through the VPN
 push "redirect-gateway def1 autolocal bypass-dhcp"
