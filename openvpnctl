@@ -69,7 +69,7 @@ if [[ "$IP" = "" ]]; then
         IP=$(wget -qO- ipv4.icanhazip.com)
 fi
 
-VPN24NET=${VPN24NET:-'10.8.0'}
+VPN24NET=${VPN24NET:-'10.142.19'}
 VPNINTERFACE=${VPNINTERFACE:-'tun'}
 
 if [[ -e /etc/openvpn/server.conf ]]; then
@@ -273,9 +273,11 @@ else
     chown nobody:$GROUPNAME /etc/openvpn/crl.pem
     # Generate key for tls-auth
     openvpn --genkey --secret /etc/openvpn/ta.key
+    
+    # Make client config directory
+    mkdir -p /etc/openvpn/ccd
+    
     # Generate server.conf
-    
-    
     
     echo '
 port '${PORT}'
@@ -300,9 +302,13 @@ client-to-client
 topology subnet
 server '${VPN24NET}'.0 255.255.255.0
 ifconfig-pool-persist ipp.txt
+client-config-dir ccd
 
 # Tell clients to send all their traffic through the VPN
-push "redirect-gateway def1"
+push "redirect-gateway def1 bypass-dhcp"
+
+# Allow client-to-client communication on VPN
+#push "route <client subnet> 255.255.255.0"
 
 # Give clients a route to the VPN server
 #push "route 10.134.1.0 255.255.255.0"
