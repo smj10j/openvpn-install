@@ -43,7 +43,6 @@ else
     exit 5
 fi
 
-VPN24NET=${VPN24NET:-'10.8.0'}
 
 newclient () {
     # Generates the custom client.ovpn
@@ -69,6 +68,9 @@ IP=$(ip addr | grep 'inet' | grep -v inet6 | grep -vE '127\.[0-9]{1,3}\.[0-9]{1,
 if [[ "$IP" = "" ]]; then
         IP=$(wget -qO- ipv4.icanhazip.com)
 fi
+
+VPN24NET=${VPN24NET:-'10.8.0'}
+VPNINTERFACE=${VPNINTERFACE:-'tun'}
 
 if [[ -e /etc/openvpn/server.conf ]]; then
     while :
@@ -214,6 +216,12 @@ else
     echo "listening to."
     read -p "IP address: " -e -i $IP IP
     echo ""
+    echo "What subnet do you want to use for OpenVPN?"
+    read -p "/24 Subnet for OpenVPN: " -e -i $VPN24NET VPN24NET
+    echo ""
+    echo "What interface do you want to create for OpenVPN traffic?"
+    read -p "OpenVPN interface: " -e -i $VPNINTERFACE VPNINTERFACE
+    echo ""
     echo "What port do you want for OpenVPN?"
     read -p "Port: " -e -i 1194 PORT
     echo ""
@@ -270,9 +278,9 @@ else
     
     
     echo '
-port '$PORT'
+port '${PORT}'
 proto udp
-dev tun
+dev '${VPNINTERFACE}'
 #tun-ipv6
 
 sndbuf 393216
@@ -392,18 +400,17 @@ mssfix 1450
         # If iptables has at least one REJECT rule, we asume this is needed.
         # Not the best approach but I can't think of other and this shouldn't
         # cause problems.
+        iptables -I INPUT -i tun+ -j ACCEPT
         iptables -I INPUT -p udp --dport $PORT -j ACCEPT
+        iptables -I FORWARD -i tun+ -j ACCEPT
         iptables -I FORWARD -s ${VPN24NET}.0/24 -j ACCEPT
         iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+        sed -i "1 a\iptables -I INPUT -i tun+ -j ACCEPT" $RCLOCAL
         sed -i "1 a\iptables -I INPUT -p udp --dport $PORT -j ACCEPT" $RCLOCAL
+        sed -i "1 a\iptables -I FORWARD -i tun+ -j ACCEPT" $RCLOCAL
         sed -i "1 a\iptables -I FORWARD -s ${VPN24NET}.0/24 -j ACCEPT" $RCLOCAL
         sed -i "1 a\iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT" $RCLOCAL
-        
-        # Added by steve 9.1.16 based on reading the OpenVPN man page section on Firewalls
-        iptables -A FORWARD -i tun+ -j ACCEPT
-        iptables -A INPUT -i tun+ -j ACCEPT
-        sed -i "1 a\iptables -A INPUT -i tun+ -j ACCEPT" $RCLOCAL
-        sed -i "1 a\iptables -A FORWARD -i tun+ -j ACCEPT" $RCLOCAL
+
 
     fi
     # If SELinux is enabled and a custom port was selected, we need this
@@ -458,7 +465,7 @@ mssfix 1450
     echo "
 client
 proto udp
-dev tun
+dev ${VPNINTERFACE}
 #tun-ipv6
 sndbuf 393216
 rcvbuf 393216
