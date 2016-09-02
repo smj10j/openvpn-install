@@ -161,8 +161,8 @@ if [[ -e /etc/openvpn/server.conf ]]; then
        		echo ""
        		echo "Routing has been reversed. If you still have any issues, you can reference the iptables state backups in /etc/iptables"
        		echo "We can also restore your pre-install iptables now if you'd like."
-       		read -p "Restore your previous iptables (note: any changes other applications may have made since the install of openvpn may be lost) [y/n]: " -e -i '' RESTORE-IPTABLES
-                if [[ "$RESTORE-IPTABLES" = 'y' ]]; then
+       		read -p "Restore your previous iptables (note: any changes other applications may have made since the install of openvpn may be lost) [y/n]: " -e -i '' RESTORE_IPTABLES
+                if [[ "$RESTORE_IPTABLES" = 'y' ]]; then
        			# Restore iptables
        		        iptables-restore < /etc/iptables/rules.pre-openvpn-roadwarrior-install.v4
        	               	ip6tables-restore < /etc/iptables/rules.pre-openvpn-roadwarrior-install.v6
