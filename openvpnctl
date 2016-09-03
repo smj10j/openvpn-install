@@ -312,7 +312,7 @@ push "redirect-gateway def1 bypass-dhcp"
 
 # Give clients a route to the VPN server
 #push "route 10.134.1.0 255.255.255.0"
-push "route $IP '${VPN24NET}'.1"
+push "route '${IP}' '${VPN24NET}'.1"
 
 #push "dhcp-option PROXY_HTTP  proxy.01j.me 3128"
 #push "dhcp-option PROXY_HTTPS proxy.01j.me 3128"
