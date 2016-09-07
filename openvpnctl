@@ -70,7 +70,7 @@ if [[ "$IP" = "" ]]; then
 fi
 
 VPN24NET=${VPN24NET:-'10.142.19'}
-VPNINTERFACE=${VPNINTERFACE:-'tun'}
+VPNINTERFACE=${VPNINTERFACE:-'utun'}
 
 if [[ -e /etc/openvpn/server.conf ]]; then
     while :
@@ -277,6 +277,8 @@ else
     # Make client config directory
     mkdir -p /etc/openvpn/ccd
     
+    mkdir -p /var/log/openvpn
+    
     # Generate server.conf
     
     echo '
@@ -301,8 +303,8 @@ tls-auth ta.key 0
 client-to-client
 topology subnet
 server '${VPN24NET}'.0 255.255.255.0
-ifconfig-pool-persist ipp.txt
-client-config-dir ccd
+ifconfig-pool-persist /etc/openvpn/ipp.txt
+client-config-dir /etc/openvpn/ccd
 
 # Tell clients to send all their traffic through the VPN
 push "redirect-gateway def1 bypass-dhcp"
@@ -312,7 +314,7 @@ push "redirect-gateway def1 bypass-dhcp"
 
 # Give clients a route to the VPN server
 #push "route 10.134.1.0 255.255.255.0"
-push "route '${IP}' '${VPN24NET}'.1"
+#push "route '${IP}' 255.255.255.255"
 
 #push "dhcp-option PROXY_HTTP  proxy.01j.me 3128"
 #push "dhcp-option PROXY_HTTPS proxy.01j.me 3128"
@@ -357,10 +359,10 @@ user nobody
 group $GROUPNAME
 
 
-status openvpn-status.log
-log /var/log/openvpn.log
-verb 3
-mute 20
+status /var/log/openvpn/openvpn-status.log
+log-append /var/log/openvpn/log.log
+verb 4
+mute 100
 
 comp-lzo
 
@@ -471,8 +473,9 @@ mssfix 1450
     echo "
 client
 proto udp
-dev ${VPNINTERFACE}
-#tun-ipv6
+dev-node ${VPNINTERFACE}
+dev-type tun
+
 sndbuf 393216
 rcvbuf 393216
 
